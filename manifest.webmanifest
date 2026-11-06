@@ -1,0 +1,18 @@
+{
+  "name": "Brit Hadasha · Mattityahu — Yeshúa La Torá Viviente",
+  "short_name": "Brit Hadasha",
+  "description": "Estudios expositivos de Mattityahu 1–18 a la luz del Mashíaj Yeshúa.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0D223D",
+  "theme_color": "#0D223D",
+  "categories": ["books", "education", "lifestyle"],
+  "icons": [
+    { "src": "img/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
