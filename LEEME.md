@@ -1,6 +1,6 @@
 # Brit Hadasha · Mattityahu — App (PWA)
 
-Aplicación instalable (móvil y computador) con los 18 capítulos de Mattityahu.
+Aplicación instalable (móvil y computador) con los capítulos de Mattityahu, verso del día cumplido en el Mashíaj y reloj de Jerusalén.
 
 ## Publicar en Vercel (igual que el Calendario)
 1. Crea un repositorio nuevo en GitHub (por ejemplo `Brit-Hadasha`) y sube **todo el contenido de esta carpeta** (index.html en la raíz).
@@ -13,7 +13,7 @@ Aplicación instalable (móvil y computador) con los 18 capítulos de Mattityahu
 - `c/` — páginas para compartir: al pegar el enlace en WhatsApp/Facebook aparece la tarjeta del capítulo
 - `img/og/` — imágenes de vista previa de cada capítulo
 - `js/chapters.js` — temas, versículo central de cada capítulo, redes sociales y dominio
-- `sw.js` — permite leer sin conexión. Si cambias textos, sube el número de `VERSION` (bh-mateo-v2…) para que los teléfonos descarguen la actualización.
+- `sw.js` — permite leer sin conexión. Si cambias textos, sube el número de `VERSION` (bh-mateo-v3…) para que los teléfonos descarguen la actualización.
 
 ## Agregar más capítulos o libros
-Añade el archivo `data/mateo-19.json` y su entrada en `js/chapters.js`, y agrega el archivo a la lista de `sw.js`.
+Añade el archivo `data/mateo-20.json`, su entrada en `CHAPTERS` y su verso en `VERSOS_DIARIOS` (js/chapters.js), y agrega el archivo a la lista de `sw.js`.

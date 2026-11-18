@@ -76,19 +76,24 @@
   function showInstallBanner() {
     if (document.querySelector('.install-banner')) return;
     const b = document.createElement('div'); b.className = 'install-banner no-print';
-    b.innerHTML = `<img src="img/icon-192.png" alt=""><div><strong>Instala Brit Hadasha</strong>Léela sin conexión desde tu pantalla de inicio.</div>
-      <button class="btn btn-gold" data-install>Instalar</button><button class="icon-btn" aria-label="Cerrar" data-x>${icon('close')}</button>`;
+    b.innerHTML = `<img src="img/icon-192.png" alt=""><div><strong>Descarga la app</strong>Léela sin conexión desde tu pantalla de inicio.</div>
+      <button class="btn btn-blue" data-install>Descargar</button><button class="icon-btn" aria-label="Cerrar" data-x>${icon('close')}</button>`;
     b.querySelector('[data-install]').onclick = () => { b.remove(); install(); };
     b.querySelector('[data-x]').onclick = () => { b.remove(); store.set('installDismissed', true); };
     document.body.appendChild(b);
   }
-  async function install() {
-    if (deferredPrompt) { deferredPrompt.prompt(); await deferredPrompt.userChoice.catch(() => {}); deferredPrompt = null; return; }
-    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    const steps = ios
-      ? `<li>Abre esta página en <strong>Safari</strong>.</li><li>Toca el botón <strong>Compartir</strong> (el cuadro con la flecha hacia arriba).</li><li>Elige <strong>Agregar a pantalla de inicio</strong> y toca <strong>Agregar</strong>.</li>`
-      : `<li><strong>Android:</strong> abre el menú <strong>⋮</strong> de Chrome y elige <strong>Instalar app</strong> o <strong>Agregar a pantalla principal</strong>.</li><li><strong>Computador:</strong> en Chrome o Edge, haz clic en el ícono de instalar que aparece a la derecha de la barra de direcciones.</li>`;
-    openSheet('Instalar la app', `<ol style="line-height:1.7;padding-left:1.2em;margin:0">${steps}</ol><p class="hint">Una vez instalada, los 18 capítulos se leen sin conexión.</p>`);
+  const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  async function install(platform) {
+    if (isStandalone()) { toast('La app ya está instalada en este dispositivo'); return; }
+    if (deferredPrompt && platform !== 'ios') { deferredPrompt.prompt(); await deferredPrompt.userChoice.catch(() => {}); deferredPrompt = null; return; }
+    const p = platform || (isIOS() ? 'ios' : /android/i.test(navigator.userAgent) ? 'android' : 'pc');
+    const steps = {
+      ios: ['Abre esta página en <strong>Safari</strong>.', 'Toca el botón <strong>Compartir</strong> (el cuadro con la flecha hacia arriba).', 'Baja y elige <strong>Agregar a pantalla de inicio</strong>.', 'Toca <strong>Agregar</strong>. El ícono aparecerá en tu pantalla.'],
+      android: ['Abre esta página en <strong>Chrome</strong>.', 'Toca el menú <strong>⋮</strong> (arriba a la derecha).', 'Elige <strong>Instalar app</strong> o <strong>Agregar a pantalla principal</strong>.', 'Confirma con <strong>Instalar</strong>.'],
+      pc: ['Abre esta página en <strong>Chrome</strong> o <strong>Edge</strong>.', 'Haz clic en el ícono de <strong>instalar</strong> (una pantalla con flecha) a la derecha de la barra de direcciones.', 'También puedes abrir el menú <strong>⋮</strong> y elegir <strong>Instalar Brit Hadasha</strong>.', 'La app se abre en su propia ventana y queda en el menú de inicio o el escritorio.']
+    }[p];
+    const name = { ios: 'iPhone o iPad', android: 'Android', pc: 'computador' }[p];
+    openSheet(`Descargar en ${name}`, `<ol class="steps">${steps.map(x => `<li>${x}</li>`).join('')}</ol><p class="hint">Una vez instalada, los ${CH.length} capítulos se leen sin conexión.</p>`);
   }
 
   /* ---------- Hojas / paneles ---------- */
@@ -117,7 +122,7 @@
         <button data-f="post" aria-pressed="true">Publicación</button><button data-f="story" aria-pressed="false">Historia / Estado</button>
       </div>
       <canvas class="card-preview" width="1080" height="1350" aria-label="Vista previa de la tarjeta"></canvas>
-      <button class="btn btn-gold share-primary" data-native hidden>${icon('share')}Compartir tarjeta</button>
+      <button class="btn btn-blue share-primary" data-native hidden>${icon('share')}Compartir tarjeta</button>
       <div class="share-grid">
         <a href="https://wa.me/?text=${enc(text)}" target="_blank" rel="noopener"><span class="ico ico-wa">${icon('chat')}</span>WhatsApp</a>
         <a href="https://www.facebook.com/sharer/sharer.php?u=${enc(d.url)}" target="_blank" rel="noopener"><span class="ico ico-fb">${icon('f')}</span>Facebook</a>
@@ -128,7 +133,7 @@
         <button data-copy><span class="ico ico-link">${icon('link')}</span>Copiar enlace</button>
         <button data-dl><span class="ico ico-dl">${icon('image')}</span>Guardar imagen</button>
       </div>
-      <p class="hint">La tarjeta lleva un código QR y el enlace para entrar a la app.</p>`);
+      <p class="hint">El enlace va en el mensaje para que entren directo al capítulo.</p>`);
     const canvas = sh.querySelector('canvas');
     const render = () => window.ShareCard.draw(canvas, d, format, '');
     render();
@@ -172,39 +177,100 @@
   /* ---------- Vistas ---------- */
   function setTitle(t) { document.title = t ? `${t} · Brit Hadasha` : 'Brit Hadasha · Mattityahu'; }
 
+  /* Verso del día: cambia cada día según la fecha de Jerusalén */
+  function jerusalemParts(d) {
+    const f = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jerusalem', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
+    const o = {}; f.formatToParts(d).forEach(p => { o[p.type] = p.value; }); return o;
+  }
+  function dailyVerse() {
+    const p = jerusalemParts(new Date());
+    const day = Math.floor(Date.UTC(+p.year, +p.month - 1, +p.day) / 86400000);
+    const list = window.VERSOS_DIARIOS;
+    return list[((day % list.length) + list.length) % list.length];
+  }
+  let clockTimer = null;
+  function startClock() {
+    clearInterval(clockTimer);
+    const tick = () => {
+      const el = document.getElementById('jer-time'); if (!el) { clearInterval(clockTimer); return; }
+      const now = new Date();
+      const p = jerusalemParts(now);
+      el.innerHTML = `${p.hour}:${p.minute}<small>:${p.second}</small>`;
+      const date = new Intl.DateTimeFormat('es', { timeZone: 'Asia/Jerusalem', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(now);
+      document.getElementById('jer-date').textContent = date.charAt(0).toUpperCase() + date.slice(1);
+      document.getElementById('my-time').textContent = new Intl.DateTimeFormat('es', { hour: '2-digit', minute: '2-digit' }).format(now);
+    };
+    tick(); clockTimer = setInterval(tick, 1000);
+  }
+  const STAR = `<svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="7" stroke-linejoin="round"><path d="M50 8 L86.4 71 L13.6 71 Z"/><path d="M50 92 L13.6 29 L86.4 29 Z"/></g></svg>`;
+
   function viewHome() {
     setTitle('');
     const last = store.get('last', null);
     const total = Object.values(highlights).reduce((a, l) => a + l.length, 0);
+    const dv = dailyVerse(); const dm = meta(dv.n);
+    const newest = CH[CH.length - 1].n;
     app.innerHTML = `
-      <header class="hero">
-        <div class="wrap">
-          <img class="hero-logo" src="img/logo-banner.png" alt="Yeshúa La Torah Viviente — Ministerio Judío Mesiánico" width="1280" height="171">
+      <header class="hero flag">
+        <div class="wrap hero-grid">
+          <img class="hero-cover" src="img/portada.jpg" alt="Brit Hadasha bajo la luz de MarYah Yeshúa HaMashíaj — Yeshúa La Torá Viviente, Ministerio Judío Mesiánico" width="900" height="900">
           <div class="hero-text">
             <h1>Brit Hadasha<small>Besoráh según Mattityahu</small></h1>
-            <p>Estudio expositivo profundo de los capítulos 1 al 18, a la luz del Mashíaj Yeshúa. Lee, subraya con colores y comparte cada capítulo.</p>
+            <p>Estudio expositivo de los capítulos 1 al ${CH.length}, bajo la luz de MarYah Yeshúa HaMashíaj. Lee, subraya con colores y comparte cada capítulo.</p>
             <div class="hero-actions">
-              ${last ? `<a class="btn btn-gold" href="#mateo-${last}" data-resume="${last}">${icon('book')}Continuar en Mattityahu ${last}</a>` : `<a class="btn btn-gold" href="#mateo-1">${icon('book')}Comenzar a leer</a>`}
-              ${isStandalone() ? '' : `<button class="btn btn-ghost" data-install>${icon('install')}Instalar app</button>`}
-              <button class="btn btn-ghost" data-share-app>${icon('share')}Compartir</button>
+              ${last ? `<a class="btn btn-blue" href="#mateo-${last}" data-resume="${last}">${icon('book')}Continuar en Mattityahu ${last}</a>` : `<a class="btn btn-blue" href="#mateo-1">${icon('book')}Comenzar a leer</a>`}
+              ${isStandalone() ? '' : `<a class="btn btn-gold" href="#descargar" data-goto="descargar">${icon('install')}Descargar app</a>`}
+              <button class="btn btn-outline" data-share-app>${icon('share')}Compartir</button>
             </div>
           </div>
         </div>
       </header>
+      <section class="clock" aria-label="Hora en Jerusalén"><div class="wrap clock-in">
+        <div class="clock-place">${STAR}<div><strong>Yerushalayim</strong><span id="jer-date">&nbsp;</span></div></div>
+        <div class="clock-time" id="jer-time" aria-live="off">--:--</div>
+        <div class="clock-side">Hora de Jerusalén<br>En tu ciudad: <b id="my-time">--:--</b></div>
+      </div></section>
       <main>
-        <section class="section wrap" aria-labelledby="h-caps">
-          <div class="section-head"><h2 id="h-caps">Capítulos</h2><p>18 estudios · sin conexión una vez instalada</p></div>
+        <section class="section wrap" aria-labelledby="h-dia">
+          <div class="daily">
+            <div class="daily-top"><strong id="h-dia">Verso del día</strong><span>Cumplido en el Mashíaj · Mattityahu ${dv.n}</span></div>
+            <div class="daily-body">
+              <div class="daily-col"><h3>Profecía del Tanaj</h3><p class="ref">${esc(dv.tanajRef)}</p><blockquote>“${fmt(dv.tanaj)}”</blockquote></div>
+              <div class="daily-arrow" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></svg></div>
+              <div class="daily-col"><h3>Cumplimiento en la Brit Hadasha</h3><p class="ref">Mattityahu ${esc(dv.ref)}</p><blockquote>“${fmt(dv.texto)}”</blockquote></div>
+            </div>
+            <p class="daily-mashiaj"><b>En el Mashíaj:</b> ${fmt(dv.mashiaj)}</p>
+            <div class="daily-actions">
+              <a class="btn btn-blue" href="#mateo-${dv.n}">${icon('book')}Leer Mattityahu ${dv.n}</a>
+              <button class="btn btn-outline" data-share-day>${icon('share')}Compartir el verso</button>
+            </div>
+          </div>
+        </section>
+        <section class="section wrap" aria-labelledby="h-caps" style="padding-top:0">
+          <div class="section-head"><h2 id="h-caps">Capítulos</h2><p>${CH.length} estudios · sin conexión una vez instalada</p></div>
           <ol class="chapters">
             ${CH.map(c => {
               const p = positions[c.n] || 0; const hl = (highlights[c.n] || []).length;
               return `<li><a class="chap-link" href="#mateo-${c.n}">
-                <span class="chap-num">${c.n}</span>
+                <span class="chap-num${c.n === newest ? ' new' : ''}">${c.n}</span>
                 <span class="chap-body"><span class="chap-title">${esc(c.tema)}</span>
-                  <span class="chap-sum" style="display:block">${esc(c.resumen)}</span>
-                  <span class="chap-meta"><span>Mattityahu ${esc(c.ref)}</span>${p > 0.02 ? `<span class="done">Leído ${Math.min(100, Math.round(p * 100))}%</span>` : ''}${hl ? `<span class="done">${hl} subrayado${hl > 1 ? 's' : ''}</span>` : ''}</span></span>
+                  <span class="chap-sum">${esc(c.resumen)}</span>
+                  <span class="chap-meta">${c.n === newest ? '<span class="badge">Nuevo</span>' : ''}<span>Mattityahu ${esc(c.ref)}</span>${p > 0.02 ? `<span class="done">Leído ${Math.min(100, Math.round(p * 100))}%</span>` : ''}${hl ? `<span class="done">${hl} subrayado${hl > 1 ? 's' : ''}</span>` : ''}</span></span>
                 <span class="chap-arrow">${icon('next')}</span></a></li>`;
             }).join('')}
           </ol>
+        </section>
+        <section class="section wrap" id="descargar" aria-labelledby="h-dl" style="padding-top:0">
+          <div class="download flag"><div class="in">
+            <h2 id="h-dl">Descarga la app</h2>
+            <p>Instálala gratis en tu celular o computador y lee los estudios aunque no tengas internet.</p>
+            <div class="dl-grid">
+              <button class="dl-btn" data-platform="android"><span class="ico">${icon('phone')}</span><span><strong>Android</strong><span>Celulares y tabletas</span></span></button>
+              <button class="dl-btn" data-platform="ios"><span class="ico">${icon('phone')}</span><span><strong>iPhone y iPad</strong><span>Desde Safari</span></span></button>
+              <button class="dl-btn" data-platform="pc"><span class="ico">${icon('monitor')}</span><span><strong>Computador</strong><span>Windows, Mac o Linux</span></span></button>
+            </div>
+            ${isStandalone() ? '<p class="dl-note">Ya estás usando la app instalada.</p>' : '<p class="dl-note">No ocupa casi espacio y se actualiza sola.</p>'}
+          </div></div>
         </section>
         <section class="section wrap" aria-labelledby="h-hl" style="padding-top:0">
           <div class="section-head"><h2 id="h-hl">Mis subrayados</h2><p>${total ? `${total} guardado${total > 1 ? 's' : ''} en este dispositivo` : 'Selecciona cualquier texto mientras lees para subrayarlo'}</p></div>
@@ -220,12 +286,18 @@
       <footer class="footer"><div class="wrap">
         <div class="sig">${esc(CFG.despedida)}</div>
         <p>Ministerio Judío Mesiánico · <a href="https://biblioteca-mesianica.vercel.app/" target="_blank" rel="noopener">biblioteca-mesianica.vercel.app</a></p>
-        <p style="opacity:.7;margin:0">Am Israel Jai</p>
+        <p style="opacity:.8;margin:0">Am Israel Jai</p>
       </div></footer>`;
-    app.querySelector('[data-install]')?.addEventListener('click', install);
+    startClock();
+    app.querySelectorAll('[data-platform]').forEach(b => b.onclick = () => install(b.dataset.platform));
+    app.querySelector('[data-goto]')?.addEventListener('click', e => { e.preventDefault(); document.getElementById('descargar').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
     app.querySelector('[data-resume]')?.addEventListener('click', () => { pendingRestore = true; });
+    app.querySelector('[data-share-day]').onclick = () => openShare({
+      kicker: `Verso del día · Cumplido en el Mashíaj`, title: dm.tema, quote: dv.texto,
+      ref: `Mattityahu ${dv.ref}`, prophecy: `${dv.tanajRef}: “${dv.tanaj}”`, url: chapterUrl(dv.n), chapter: dv.n, file: `verso-del-dia-mattityahu-${dv.n}`
+    });
     app.querySelector('[data-share-app]').onclick = () => openShare({
-      kicker: 'Brit Hadasha · Besoráh de Mattityahu', title: 'Yeshúa, la Toráh viviente', quote: 'Busca primero El Reino y su justicia, y a su tiempo todas estas cosas se les darán por añadidura.',
+      kicker: 'Brit Hadasha · Besoráh de Mattityahu', title: 'Bajo la luz de MarYah Yeshúa HaMashíaj', quote: 'Busca primero El Reino y su justicia, y a su tiempo todas estas cosas se les darán por añadidura.',
       ref: 'Mattityahu 6:33', url: homeUrl(), chapter: null, file: 'brit-hadasha'
     });
     window.scrollTo(0, 0);
@@ -258,6 +330,10 @@
       } else if (b.k === 'note') html += `<p class="note blk" data-b="${i}"><span class="tx">${fmt(b.t)}</span></p>`;
       else if (b.k === 'h2') html += `<h2 class="blk" id="s-${i}" data-b="${i}"><span class="tx">${fmt(b.t)}</span></h2>`;
       else if (b.k === 'h3') html += `<h3 class="blk" id="s-${i}" data-b="${i}"><span class="tx">${fmt(b.t)}</span></h3>`;
+      else if (b.k === 'table') {
+        const [head, ...rows] = b.rows;
+        html += `<div class="table-wrap"><table><thead><tr>${head.map(c => `<th scope="col">${fmt(c)}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${fmt(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+      }
       else if (b.k === 'li') { if (!inList) { html += '<ul>'; inList = true; } html += `<li class="blk" data-b="${i}"><span class="tx">${fmt(b.t)}</span></li>`; }
       else html += `<p class="blk${b.b ? ' strong' : ''}" data-b="${i}"><span class="tx">${fmt(b.t)}</span></p>`;
     }
@@ -285,19 +361,19 @@
         <button class="icon-btn" data-share aria-label="Compartir capítulo">${icon('share')}</button>
         <a class="icon-btn" href="pdf/Mattityahu-${n}.pdf" download="Mattityahu-${n}-Brit-Hadasha.pdf" aria-label="Descargar PDF" data-pdf>${icon('pdf')}</a>
       </div><div class="progress"></div></header>
-      <section class="chap-hero"><span class="ghost" aria-hidden="true">${n}</span><div class="wrap">
+      <section class="chap-hero flag"><span class="star">${STAR}</span><div class="wrap">
         <div class="kicker">Mattityahu · Capítulo ${n}</div>
         <h1>${esc(m.tema)}</h1>
         <blockquote>“${esc(m.verso)}”<cite>Mattityahu ${esc(m.ref)}</cite></blockquote>
         <div class="hero-actions">
-          <button class="btn btn-gold" data-share>${icon('share')}Compartir tarjeta</button>
-          <a class="btn btn-ghost" href="pdf/Mattityahu-${n}.pdf" download="Mattityahu-${n}-Brit-Hadasha.pdf" data-pdf>${icon('pdf')}Descargar PDF</a>
+          <button class="btn btn-blue" data-share>${icon('share')}Compartir tarjeta</button>
+          <a class="btn btn-outline" href="pdf/Mattityahu-${n}.pdf" download="Mattityahu-${n}-Brit-Hadasha.pdf" data-pdf>${icon('pdf')}Descargar PDF</a>
         </div>
       </div></section>
       <main class="wrap"><article class="article measure" id="article" lang="es">${renderBlocks(data.blocks)}</article>
         <div class="chap-end measure">
-          <div class="share-cta"><div><h3>Comparte Mattityahu ${n}</h3><p>Envía la tarjeta con el tema central y el enlace al estudio.</p></div>
-            <button class="btn btn-gold" data-share>${icon('share')}Compartir tarjeta</button></div>
+          <div class="share-cta flag"><div class="in"><div><h3>Comparte Mattityahu ${n}</h3><p>Envía la tarjeta con el tema central y el enlace al estudio.</p></div>
+            <button class="btn btn-blue" data-share>${icon('share')}Compartir tarjeta</button></div></div>
           <nav class="pager" aria-label="Otros capítulos">
             ${prev ? `<a class="prev" href="#mateo-${prev.n}"><small>Anterior · Capítulo ${prev.n}</small><strong>${esc(prev.tema)}</strong></a>` : ''}
             ${next ? `<a class="next" href="#mateo-${next.n}"><small>Siguiente · Capítulo ${next.n}</small><strong>${esc(next.tema)}</strong></a>` : ''}
@@ -356,7 +432,7 @@
           ${highlights[n].slice().sort((a, b) => a.b - b.b || a.s - b.s).map(h => `<div class="hl-item"><span class="bar" style="background:${COLOR_HEX[h.c]}"></span>
             <a href="#mateo-${n}-b${h.b}">${h.v ? `<strong style="color:var(--gold-ink)">${n}:${h.v}</strong> ` : ''}${fmt(h.t)}</a>
             <button aria-label="Quitar subrayado" data-del="${n}|${h.id}">${icon('trash')}</button></div>`).join('')}</div>`).join('')
-        : `<div class="empty"><strong>Aún no tienes subrayados</strong>Abre un capítulo y selecciona cualquier frase. Elige un color en la barra que aparece abajo.<p><a class="btn btn-gold" href="#mateo-1">Ir a Mattityahu 1</a></p></div>`}
+        : `<div class="empty"><strong>Aún no tienes subrayados</strong>Abre un capítulo y selecciona cualquier frase. Elige un color en la barra que aparece abajo.<p><a class="btn btn-blue" href="#mateo-1">Ir a Mattityahu 1</a></p></div>`}
         <p class="hint">Los subrayados se guardan en este dispositivo.</p>
       </div></main>`;
     app.querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
@@ -534,7 +610,8 @@
 
   /* ---------- Rutas ---------- */
   function route() {
-    hideBar(); closeSheet();
+    hideBar(); closeSheet(); clearInterval(clockTimer);
+    if (location.hash === '#descargar') { history.replaceState(null, '', location.pathname); viewHome(); setTimeout(() => document.getElementById('descargar')?.scrollIntoView({ block: 'start' }), 60); return; }
     const h = decodeURIComponent(location.hash.slice(1));
     let m;
     if ((m = h.match(/^mateo-(\d+)(?:-v(\d+)|-b(\d+))?$/))) {

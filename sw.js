@@ -1,16 +1,17 @@
-/* Service worker: guarda la app y los 18 capítulos para leer sin conexión */
-const VERSION = 'bh-mateo-v1';
+/* Service worker: guarda la app y todos los capítulos para leer sin conexión */
+const VERSION = 'bh-mateo-v2';
 const SHELL = [
   './',
   'index.html',
   'manifest.webmanifest',
+  'favicon.ico',
   'css/app.css',
   'js/chapters.js',
   'js/card.js',
   'js/app.js',
-  'vendor/qrcode.js',
-  'img/logo-banner.png',
-  'img/logo-mark.png',
+  'img/portada.jpg',
+  'img/portada-512.jpg',
+  'img/icon-64.png',
   'img/icon-192.png',
   'img/icon-512.png',
   'img/apple-touch-icon.png',
@@ -43,7 +44,8 @@ const SHELL = [
   'data/mateo-15.json',
   'data/mateo-16.json',
   'data/mateo-17.json',
-  'data/mateo-18.json'
+  'data/mateo-18.json',
+  'data/mateo-19.json'
 ];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
