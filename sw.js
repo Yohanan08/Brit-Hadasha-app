@@ -1,5 +1,5 @@
 /* Service worker: guarda la app y todos los capítulos para leer sin conexión */
-const VERSION = 'bh-mateo-v5';
+const VERSION = 'bh-mateo-v6';
 const SHELL = [
   './',
   'index.html',
@@ -14,6 +14,7 @@ const SHELL = [
   'img/icon-64.png',
   'img/icon-192.png',
   'img/icon-512.png',
+  'img/icon-maskable-512.png',
   'img/apple-touch-icon.png',
   'fonts/cormorant-garamond-latin-500-italic.woff2',
   'fonts/cormorant-garamond-latin-500-normal.woff2',

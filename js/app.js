@@ -636,6 +636,18 @@
   window.addEventListener('hashchange', route);
   route();
 
+  /* Pantalla de inicio con la portada: visible al abrir, se desvanece cuando la app está lista */
+  (function hideSplash() {
+    const sp = document.getElementById('splash'); if (!sp) return;
+    const minMs = isStandalone() ? 1600 : 900;
+    const img = sp.querySelector('img');
+    const ready = img && !img.complete ? new Promise(r => { img.onload = img.onerror = r; setTimeout(r, 2500); }) : Promise.resolve();
+    ready.then(() => {
+      const wait = Math.max(0, minMs - performance.now());
+      setTimeout(() => { sp.classList.add('hide'); setTimeout(() => sp.remove(), 600); }, wait);
+    });
+  })();
+
   /* ---------- Service worker (sin conexión) ---------- */
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
     window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });

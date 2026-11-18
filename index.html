@@ -25,6 +25,20 @@
 <link rel="preload" href="fonts/literata-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/cormorant-garamond-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/app.css">
+<style>
+/* Pantalla de inicio: se ve al abrir la app mientras carga */
+#splash{position:fixed;inset:0;z-index:200;display:grid;place-items:center;background:#fff;transition:opacity .45s ease,visibility .45s}
+#splash::before,#splash::after{content:"";position:absolute;left:0;right:0;height:7vh;background:#0038B8}
+#splash::before{top:6vh}#splash::after{bottom:6vh}
+#splash .sp-in{display:grid;justify-items:center;gap:18px;text-align:center;padding:0 24px}
+#splash img{width:min(62vw,300px);height:auto;aspect-ratio:1;border-radius:24px;border:4px solid #D4A62A;box-shadow:0 18px 40px rgba(0,38,125,.35);animation:sp-pop .6s ease-out}
+#splash strong{font:700 30px/1.1 "Cormorant Garamond",Georgia,serif;color:#0038B8}
+#splash span{font:14px/1.3 Georgia,serif;color:#4B5878}
+#splash.hide{opacity:0;visibility:hidden}
+@keyframes sp-pop{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){#splash img{animation:none}#splash{transition:none}}
+</style>
+
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -54,6 +68,7 @@
   <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"/></symbol>
 </svg>
 
+<div id="splash" aria-hidden="true"><div class="sp-in"><img src="img/portada.jpg" alt="" width="900" height="900"><strong>Brit Hadasha</strong><span>Yeshúa La Torá Viviente · Ministerio Judío Mesiánico</span></div></div>
 <div id="app"><div class="loading">Cargando…</div></div>
 
 <div id="hlbar" class="hlbar" hidden role="toolbar" aria-label="Subrayar texto">
