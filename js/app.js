@@ -122,46 +122,57 @@
         <button data-f="post" aria-pressed="true">Publicación</button><button data-f="story" aria-pressed="false">Historia / Estado</button>
       </div>
       <canvas class="card-preview" width="1080" height="1350" aria-label="Vista previa de la tarjeta"></canvas>
-      <button class="btn btn-blue share-primary" data-native hidden>${icon('share')}Compartir tarjeta</button>
+      <button class="btn btn-blue share-primary" data-native hidden>${icon('share')}Enviar tarjeta con imagen y enlace</button>
       <div class="share-grid">
-        <a href="https://wa.me/?text=${enc(text)}" target="_blank" rel="noopener"><span class="ico ico-wa">${icon('chat')}</span>WhatsApp</a>
+        <a href="https://wa.me/?text=${enc(text)}" target="_blank" rel="noopener" data-imgshare="WhatsApp"><span class="ico ico-wa">${icon('chat')}</span>WhatsApp</a>
         <a href="https://www.facebook.com/sharer/sharer.php?u=${enc(d.url)}" target="_blank" rel="noopener"><span class="ico ico-fb">${icon('f')}</span>Facebook</a>
         <a href="https://twitter.com/intent/tweet?text=${enc(d.title + ' — ' + d.ref)}&url=${enc(d.url)}" target="_blank" rel="noopener"><span class="ico ico-x">${icon('xx')}</span>X</a>
-        <a href="https://t.me/share/url?url=${enc(d.url)}&text=${enc(d.title + ' — ' + d.ref)}" target="_blank" rel="noopener"><span class="ico ico-tg">${icon('send')}</span>Telegram</a>
+        <a href="https://t.me/share/url?url=${enc(d.url)}&text=${enc(d.title + ' — ' + d.ref + '\n“' + d.quote + '”')}" target="_blank" rel="noopener" data-tg><span class="ico ico-tg">${icon('send')}</span>Telegram</a>
         <button data-ig><span class="ico ico-ig">${icon('camera')}</span>Instagram</button>
         <a href="mailto:?subject=${enc(d.title + ' — ' + d.ref)}&body=${enc(text)}"><span class="ico ico-mail">${icon('mail')}</span>Correo</a>
         <button data-copy><span class="ico ico-link">${icon('link')}</span>Copiar enlace</button>
         <button data-dl><span class="ico ico-dl">${icon('image')}</span>Guardar imagen</button>
       </div>
-      <p class="hint">El enlace va en el mensaje para que entren directo al capítulo.</p>`);
+      <p class="hint">Se envía la tarjeta como imagen, con el texto y el enlace debajo.</p>`);
     const canvas = sh.querySelector('canvas');
     const render = () => window.ShareCard.draw(canvas, d, format, '');
     render();
     sh.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
       format = b.dataset.f; sh.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', x === b)); render();
     });
-    const fileName = `${d.file || 'brit-hadasha'}-${format}.png`;
-    const getBlob = () => new Promise(res => canvas.toBlob(res, 'image/png'));
+    const fileName = () => `${d.file || 'brit-hadasha'}-${format}.jpg`;
+    const getBlob = () => new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.92));
     const download = async () => {
       const blob = await getBlob(); const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = fileName; document.body.appendChild(a); a.click(); a.remove();
+      const a = document.createElement('a'); a.href = url; a.download = fileName(); document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 4000);
     };
     // Compartir nativo con imagen (móviles)
     const nat = sh.querySelector('[data-native]');
+    let canFiles = false;
     try {
       const probe = new File([new Blob(['x'], { type: 'image/png' })], 'x.png', { type: 'image/png' });
-      if (navigator.canShare && navigator.canShare({ files: [probe] })) nat.hidden = false;
+      if (navigator.canShare && navigator.canShare({ files: [probe] })) { nat.hidden = false; canFiles = true; }
       else if (navigator.share) { nat.hidden = false; nat.dataset.textOnly = '1'; nat.innerHTML = `${icon('share')}Compartir enlace`; }
     } catch (e) {}
     nat.onclick = async () => {
       try {
         if (nat.dataset.textOnly) { await navigator.share({ title: d.title, text, url: d.url }); return; }
+        const copied = copyText(text); // algunas apps (p. ej. Telegram en PC) solo toman la imagen
         const blob = await getBlob();
-        const file = new File([blob], fileName, { type: 'image/png' });
+        const file = new File([blob], fileName(), { type: 'image/jpeg' });
         await navigator.share({ files: [file], title: d.title, text });
+        if (await copied) toast('Si el enlace no aparece en el mensaje, pégalo: ya está copiado');
       } catch (e) { if (e && e.name !== 'AbortError') toast('No se pudo abrir el menú para compartir'); }
     };
+    // WhatsApp y Telegram: tarjeta como imagen + texto con enlace (igual que en Tehilim)
+    sh.querySelectorAll('[data-imgshare]').forEach(a => a.addEventListener('click', async e => {
+      if (canFiles) { e.preventDefault(); nat.click(); return; }
+      // Computador sin menú de compartir: guarda la imagen y abre el chat con el texto listo
+      download(); copyText(text);
+      toast(`Imagen guardada. En ${a.dataset.imgshare}, adjúntala con el clip y envía`);
+    }));
+    sh.querySelector('[data-tg]').addEventListener('click', () => { copyText(text); });
     sh.querySelector('[data-copy]').onclick = async () => { toast((await copyText(d.url)) ? 'Enlace copiado' : 'Selecciona y copia el enlace: ' + d.url); };
     sh.querySelector('[data-dl]').onclick = async () => { await download(); toast('Imagen guardada'); };
     sh.querySelector('[data-ig]').onclick = async () => {
