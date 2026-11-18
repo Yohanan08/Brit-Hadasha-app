@@ -1,5 +1,5 @@
 /* Service worker: guarda la app y todos los capítulos para leer sin conexión */
-const VERSION = 'bh-mateo-v6';
+const VERSION = 'bh-mateo-v7';
 const SHELL = [
   './',
   'index.html',

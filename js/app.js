@@ -110,7 +110,7 @@
     return sh;
   }
   function closeSheet() { document.querySelectorAll('.scrim, .sheet').forEach(e => e.remove()); }
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeSheet(); hideBar(); } });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeSheet(); hideBar(); document.querySelectorAll('.drawer, .drawer-scrim').forEach(x => x.remove()); } });
 
   /* ---------- Compartir con tarjeta ---------- */
   function openShare(d) {
@@ -222,6 +222,13 @@
     const dv = dailyVerse(); const dm = meta(dv.n);
     const newest = CH[CH.length - 1].n;
     app.innerHTML = `
+      <header class="topbar"><div class="wrap topbar-in">
+        <button class="icon-btn" data-menu aria-label="Abrir menú">${icon('menu')}</button>
+        <div class="topbar-title"><small>Yeshúa La Torá Viviente</small>Brit Hadasha</div>
+        <button class="icon-btn" data-chapters aria-label="Índice de capítulos">${icon('list')}</button>
+        <button class="icon-btn" data-settings aria-label="Tamaño de letra y colores">${icon('text')}</button>
+        <button class="icon-btn" data-share-top aria-label="Compartir la app">${icon('share')}</button>
+      </div></header>
       <header class="hero flag">
         <div class="wrap hero-grid">
           <img class="hero-cover" src="img/portada.jpg" alt="Brit Hadasha bajo la luz de MarYah Yeshúa HaMashíaj — Yeshúa La Torá Viviente, Ministerio Judío Mesiánico" width="900" height="900">
@@ -300,6 +307,8 @@
         <p style="opacity:.8;margin:0">Am Israel Jai</p>
       </div></footer>`;
     startClock();
+    bindTopbar();
+    app.querySelector('[data-share-top]').onclick = () => app.querySelector('[data-share-app]').click();
     app.querySelectorAll('[data-platform]').forEach(b => b.onclick = () => install(b.dataset.platform));
     app.querySelector('[data-goto]')?.addEventListener('click', e => { e.preventDefault(); document.getElementById('descargar').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
     app.querySelector('[data-resume]')?.addEventListener('click', () => { pendingRestore = true; });
@@ -365,7 +374,7 @@
     const prev = meta(n - 1), next = meta(n + 1);
     app.innerHTML = `
       <header class="topbar"><div class="wrap topbar-in">
-        <a class="icon-btn" href="#" aria-label="Volver a los capítulos">${icon('back')}</a>
+        <button class="icon-btn" data-menu aria-label="Abrir menú">${icon('menu')}</button>
         <div class="topbar-title"><small>Brit Hadasha</small>Mattityahu ${n}</div>
         <button class="icon-btn" data-toc aria-label="Índice del capítulo">${icon('list')}</button>
         <button class="icon-btn" data-settings aria-label="Tamaño de letra y tema">${icon('text')}</button>
@@ -395,7 +404,7 @@
       </main>`;
     app.querySelectorAll('[data-share]').forEach(b => b.onclick = () => openShare(chapterShareData(n)));
     app.querySelector('[data-toc]').onclick = openToc;
-    app.querySelector('[data-settings]').onclick = openSettings;
+    bindTopbar();
     app.querySelectorAll('[data-pdf]').forEach(a => a.addEventListener('click', () => toast('Descargando PDF…')));
     applyAllMarks();
     // Posición
@@ -409,6 +418,50 @@
     });
   }
 
+  function bindTopbar() {
+    app.querySelector('[data-menu]')?.addEventListener('click', openMenu);
+    app.querySelector('[data-chapters]')?.addEventListener('click', openChapters);
+    app.querySelector('[data-settings]')?.addEventListener('click', openSettings);
+  }
+  function goHomeSection(id) {
+    closeDrawer();
+    const go = () => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (location.hash && location.hash !== '#') { location.hash = ''; setTimeout(go, 120); } else go();
+  }
+  function closeDrawer() { document.querySelectorAll('.drawer, .drawer-scrim').forEach(e => e.remove()); }
+  function openMenu() {
+    closeDrawer(); closeSheet();
+    const scrim = document.createElement('div'); scrim.className = 'drawer-scrim';
+    const d = document.createElement('nav'); d.className = 'drawer'; d.setAttribute('aria-label', 'Menú principal');
+    const cur = current ? current.n : null;
+    d.innerHTML = `
+      <div class="drawer-head"><img src="img/icon-192.png" alt="" width="56" height="56"><div><strong>Brit Hadasha</strong><span>Yeshúa La Torá Viviente</span></div>
+        <button class="icon-btn" data-x aria-label="Cerrar menú">${icon('close')}</button></div>
+      <div class="drawer-body">
+        <a href="#" data-home>${icon('book')}Inicio</a>
+        <a href="#" data-sec="h-dia">${icon('sparkle')}Verso del día</a>
+        <a href="#" data-sec="h-caps">${icon('list')}Capítulos</a>
+        <a href="#subrayados">${icon('marker')}Mis subrayados</a>
+        <a href="#" data-sec="descargar">${icon('install')}Descargar la app</a>
+        <button data-set>${icon('text')}Letra y colores</button>
+        <div class="drawer-label">Mattityahu</div>
+        <div class="drawer-chaps">${CH.map(c => `<a href="#mateo-${c.n}"${c.n === cur ? ' aria-current="page"' : ''} title="${esc(c.tema)}">${c.n}</a>`).join('')}</div>
+        <div class="drawer-label">Síguenos</div>
+        ${CFG.redes.map(r => `<a href="${r.url}" target="_blank" rel="noopener">${icon({ instagram: 'camera', telegram: 'send', biblioteca: 'book', recursos: 'sparkle' }[r.id] || 'link')}${esc(r.nombre)}</a>`).join('')}
+      </div>`;
+    scrim.onclick = closeDrawer;
+    d.querySelector('[data-x]').onclick = closeDrawer;
+    d.querySelector('[data-home]').onclick = e => { e.preventDefault(); closeDrawer(); if (location.hash && location.hash !== '#') location.hash = ''; else window.scrollTo({ top: 0, behavior: 'smooth' }); };
+    d.querySelectorAll('[data-sec]').forEach(a => a.onclick = e => { e.preventDefault(); goHomeSection(a.dataset.sec); });
+    d.querySelector('[data-set]').onclick = () => { closeDrawer(); openSettings(); };
+    d.querySelectorAll('a[href^="#mateo-"], a[href="#subrayados"]').forEach(a => a.addEventListener('click', closeDrawer));
+    document.body.append(scrim, d);
+    setTimeout(() => d.querySelector('[data-x]').focus({ preventScroll: true }), 30);
+  }
+  function openChapters() {
+    const sh = openSheet('Capítulos', `<ul class="toc-list">${CH.map(c => `<li><a href="#mateo-${c.n}"><b style="color:var(--heading)">${c.n}.</b> ${esc(c.tema)}</a></li>`).join('')}</ul>`);
+    sh.querySelectorAll('a').forEach(a => a.addEventListener('click', closeSheet));
+  }
   function openToc() {
     const hs = current.data.blocks.map((b, i) => ({ b, i })).filter(x => x.b.k === 'h2');
     const has = current.data.blocks.some(b => b.k === 'v');
@@ -419,8 +472,8 @@
     });
   }
   function openSettings() {
-    const sh = openSheet('Lectura', `
-      <div class="setting"><span>Tamaño de letra</span><div class="stepper"><button data-d="-1" aria-label="Letra más pequeña">A−</button><output id="fs-out">${prefs.fs}</output><button data-d="1" aria-label="Letra más grande">A+</button></div></div>
+    const sh = openSheet('Letra y colores', `
+      <div class="setting"><span>Tamaño de letra de los estudios</span><div class="stepper"><button data-d="-1" aria-label="Letra más pequeña">A−</button><output id="fs-out">${prefs.fs}</output><button data-d="1" aria-label="Letra más grande">A+</button></div></div>
       <div class="setting"><span>Apariencia</span><div class="seg" style="margin:0">${[['auto', 'Automática'], ['light', 'Clara'], ['dark', 'Oscura']].map(([v, l]) => `<button data-t="${v}" aria-pressed="${prefs.theme === v}">${l}</button>`).join('')}</div></div>`);
     sh.querySelectorAll('[data-d]').forEach(b => b.onclick = () => {
       prefs.fs = Math.max(15, Math.min(28, prefs.fs + Number(b.dataset.d))); sh.querySelector('#fs-out').textContent = prefs.fs; savePrefs();
@@ -435,7 +488,7 @@
     const chs = Object.keys(highlights).map(Number).filter(n => highlights[n].length).sort((a, b) => a - b);
     app.innerHTML = `
       <header class="topbar"><div class="wrap topbar-in">
-        <a class="icon-btn" href="#" aria-label="Volver al inicio">${icon('back')}</a>
+        <button class="icon-btn" data-menu aria-label="Abrir menú">${icon('menu')}</button>
         <div class="topbar-title"><small>Brit Hadasha</small>Mis subrayados</div>
       </div></header>
       <main class="wrap"><div class="measure section">
@@ -446,6 +499,7 @@
         : `<div class="empty"><strong>Aún no tienes subrayados</strong>Abre un capítulo y selecciona cualquier frase. Elige un color en la barra que aparece abajo.<p><a class="btn btn-blue" href="#mateo-1">Ir a Mattityahu 1</a></p></div>`}
         <p class="hint">Los subrayados se guardan en este dispositivo.</p>
       </div></main>`;
+    bindTopbar();
     app.querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
       const [n, id] = b.dataset.del.split('|');
       highlights[n] = (highlights[n] || []).filter(h => h.id !== id); store.set('hl', highlights); viewHighlights();
@@ -621,7 +675,7 @@
 
   /* ---------- Rutas ---------- */
   function route() {
-    hideBar(); closeSheet(); clearInterval(clockTimer);
+    hideBar(); closeSheet(); clearInterval(clockTimer); document.querySelectorAll('.drawer, .drawer-scrim').forEach(x => x.remove());
     if (location.hash === '#descargar') { history.replaceState(null, '', location.pathname); viewHome(); setTimeout(() => document.getElementById('descargar')?.scrollIntoView({ block: 'start' }), 60); return; }
     const h = decodeURIComponent(location.hash.slice(1));
     let m;

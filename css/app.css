@@ -331,3 +331,22 @@ mark.hl-lila { background: var(--hl-lila); }
   .chap-end { border-top: 1px solid var(--line); padding-block: 18pt 0; }
 }
 .chap-hero .star svg { width: 100%; height: auto; display: block; }
+
+/* ---------- Menú lateral (hamburguesa) ---------- */
+.drawer-scrim { position: fixed; inset: 0; background: rgba(2,12,40,.5); z-index: 85; }
+.drawer { position: fixed; z-index: 86; top: 0; bottom: 0; left: 0; width: min(330px, 86vw); background: var(--surface); color: var(--ink); overflow-y: auto; box-shadow: 10px 0 40px rgba(0,20,70,.3); animation: slide .22s ease-out; padding-bottom: env(safe-area-inset-bottom, 0px); }
+@keyframes slide { from { transform: translateX(-100%); } to { transform: none; } }
+.drawer-head { display: flex; align-items: center; gap: 12px; padding: calc(16px + env(safe-area-inset-top, 0px)) 10px 16px max(16px, env(safe-area-inset-left, 0px)); background: var(--blue); color: #fff; border-bottom: 4px solid var(--gold); }
+.drawer-head img { width: 56px; height: 56px; border-radius: 12px; border: 2px solid #fff; }
+.drawer-head div { flex: 1; min-width: 0; }
+.drawer-head strong { display: block; font-family: var(--display); font-size: 24px; font-weight: 700; line-height: 1.1; }
+.drawer-head span { font-size: 12.5px; opacity: .9; }
+.drawer-body { padding: 8px 10px 20px max(10px, env(safe-area-inset-left, 0px)); display: grid; gap: 2px; }
+.drawer-body > a, .drawer-body > button { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 12px; color: var(--ink); text-decoration: none; font-size: 15.5px; border: 0; background: transparent; cursor: pointer; text-align: left; width: 100%; }
+.drawer-body > a:hover, .drawer-body > button:hover { background: var(--blue-soft); }
+.drawer-body .icon { color: var(--heading); }
+.drawer-label { font-size: 12.5px; font-weight: 600; color: var(--gold-ink); padding: 14px 12px 6px; }
+.drawer-chaps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 0 8px 4px; }
+.drawer-chaps a { display: grid; place-items: center; height: 42px; border-radius: 10px; border: 1.5px solid var(--blue-line); color: var(--heading); text-decoration: none; font-family: var(--display); font-weight: 700; font-size: 19px; }
+.drawer-chaps a:hover, .drawer-chaps a[aria-current="page"] { background: var(--blue); color: #fff; border-color: var(--blue); }
+@media (prefers-reduced-motion: reduce) { .drawer { animation: none; } }
