@@ -5,7 +5,7 @@ Aplicación instalable (móvil y computador) con los capítulos de Mattityahu, v
 ## Publicar en Vercel (igual que el Calendario)
 1. Crea un repositorio nuevo en GitHub (por ejemplo `Brit-Hadasha`) y sube **todo el contenido de esta carpeta** (index.html en la raíz).
 2. En Vercel: *Add New → Project*, elige el repositorio y pulsa *Deploy* (no necesita configuración: es un sitio estático).
-3. Si el dominio que te da Vercel **no** es `brit-hadasha.vercel.app`, cambia `siteUrl` en `js/chapters.js` y en las etiquetas `og:` de `index.html` y `c/*.html` (o pídele a Claude que regenere esas páginas con tu dominio).
+3. Si el dominio que te da Vercel **no** es `brit-hadasha-app.vercel.app`, cambia `siteUrl` en `js/chapters.js` y en las etiquetas `og:` de `index.html` y `c/*.html` (o pídele a Claude que regenere esas páginas con tu dominio).
 
 ## Qué hay en cada carpeta
 - `data/` — el texto de cada capítulo (mateo-1.json … mateo-18.json)

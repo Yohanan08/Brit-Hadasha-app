@@ -1,7 +1,7 @@
 /* Configuración y datos de cada capítulo */
 window.APP_CONFIG = {
   // Dominio público donde se publica la app (Vercel / GitHub Pages).
-  siteUrl: 'https://brit-hadasha.vercel.app',
+  siteUrl: 'https://brit-hadasha-app.vercel.app',
   ministerio: 'Yeshúa — La Torá Viviente',
   autor: 'Yohanan Ben Israel',
   despedida: 'Yohanan ben Israel, compañero de labores en Adonai Yeshúa Melej HaMashíaj',
